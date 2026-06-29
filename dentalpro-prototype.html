@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DentalPro | Prototipo SaaS</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%232563eb'/%3E%3Cpath d='M20 18c6-8 12 2 12 2s6-10 12-2c6 8-2 28-8 28-3 0-2-10-4-10s-1 10-4 10c-6 0-14-20-8-28z' fill='white'/%3E%3C/svg%3E">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            ink: '#0f172a',
+            line: '#e5e7eb',
+            mist: '#f6f7fb',
+            brand: '#2563eb',
+            cyanx: '#06b6d4',
+            mint: '#10b981',
+            rosex: '#f43f5e',
+            amberx: '#f59e0b'
+          },
+          boxShadow: {
+            soft: '0 18px 45px rgba(15,23,42,.08)',
+            crisp: '0 1px 2px rgba(15,23,42,.08), 0 8px 24px rgba(15,23,42,.06)'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Inter, system-ui, sans-serif; background: #f6f7fb; color: #0f172a; }
+    .icon { width: 18px; height: 18px; stroke-width: 2; }
+    .scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+    .scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+    .glass { background: rgba(255,255,255,.86); backdrop-filter: blur(18px); }
+    .odontogram-visual svg { width: 100%; height: auto; display: block; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useMemo, useState, useEffect } = React;
+    const Icon = ({ name, className = "icon" }) => {
+      useEffect(() => { lucide.createIcons(); });
+      return <i data-lucide={name} className={className}></i>;
+    };
+
+    const names = ["Juan Perez","Emilia Gonzalez","Zulma Ganatios","Emanuel Ferreira","Manuel Kanan","Ailen Letora","Maria Gomez","Lucas Fernandez","Sofia Ramirez","Martina Lopez","Nicolas Herrera","Valentina Castro","Tomas Silva","Camila Rojas","Agustin Benitez","Paula Medina","Bruno Alvarez","Lucia Dominguez","Diego Morales","Carolina Vera","Mateo Cabrera","Florencia Luna","Joaquin Sosa","Renata Farias","Gabriel Acosta","Micaela Ruiz","Santiago Arias","Clara Molina","Federico Rivas","Bianca Ortega","Pablo Navarro","Julieta Campos","Rafael Costa","Mara Ponce","Ivan Delgado","Noelia Prieto","Lautaro Vega","Ana Robledo","Marcos Diaz","Rocio Suarez"];
+    const treatments = ["Control y limpieza","Caries 45","Ortodoncia","Tratamiento de conducto","Implante dental","Extraccion","Blanqueamiento","Corona ceramica","Urgencia por dolor","Retiro de puntos","Protesis parcial","Radiografia panoramica"];
+    const professionals = ["Dr. Alejandro Alvarado","Dra. Valeria Munoz","Dr. Bruno Molina","Dra. Camila Nieto"];
+    const statuses = ["Confirmado","Pendiente","Cancelado","Finalizado","En curso"];
+    const coverages = ["OSDE 210","Swiss Medical","Galeno Oro","Particular","Medicus","Avalian","Sancor Salud","Omint"];
+
+    function makePatients() {
+      return Array.from({ length: 80 }, (_, i) => {
+        const name = names[i % names.length] + (i >= names.length ? ` ${Math.floor(i / names.length) + 1}` : "");
+        const age = 18 + (i * 7) % 54;
+        const id = String(125 + i).padStart(6, "0");
+        return {
+          id, name, age, dni: String(30123456 + i * 7341), phone: `11 ${2345 + i} ${String(6780 + i).slice(0,4)}`,
+          email: name.toLowerCase().replaceAll(" ", ".") + "@gmail.com",
+          coverage: coverages[i % coverages.length], member: `${90000 + i * 37}`,
+          since: `${String((i % 26) + 1).padStart(2,"0")}/03/2023`, address: `Av. Siempre Viva ${742 + i} - CABA`,
+          last: `${String((i % 22) + 1).padStart(2,"0")}/05/2026`,
+          avatar: `https://i.pravatar.cc/160?img=${(i % 70) + 1}`,
+          notes: ["Paciente ansioso al tratamiento.", "Prefiere turnos por la tarde.", "Enviar presupuesto por WhatsApp."][i % 3]
+        };
+      });
+    }
+
+    const patients = makePatients();
+    const baseSlots = [
+      ["09:00",0,0],["09:30",1,1],["10:15",2,2],["10:30",3,3],["11:30",4,4],["13:00",5,1],["14:30",6,0],["15:30",7,1],["16:30",8,0],["17:15",9,2]
+    ];
+    function makeAppointments() {
+      const days = [27,28,29,30,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30];
+      let list = [];
+      days.forEach((day, dIdx) => {
+        baseSlots.forEach((slot, sIdx) => {
+          if ((dIdx + sIdx) % 5 !== 0) {
+            const patient = patients[(dIdx * 7 + sIdx) % patients.length];
+            list.push({
+              id: `a-${dIdx}-${sIdx}`,
+              date: `2026-06-${String(day).padStart(2,"0")}`,
+              dayIndex: dIdx % 7,
+              time: slot[0],
+              duration: [30,45,60,75][(dIdx + sIdx) % 4],
+              patientId: patient.id,
+              patient: patient.name,
+              treatment: treatments[(slot[1] + dIdx) % treatments.length],
+              status: statuses[(slot[2] + dIdx) % statuses.length],
+              professional: professionals[(sIdx + dIdx) % professionals.length],
+              observations: "Revisar evolucion anterior y confirmar cobertura antes de iniciar."
+            });
+          }
+        });
+      });
+      return list;
+    }
+    const allAppointments = makeAppointments();
+    const today = "2026-06-29";
+    const statusTone = {
+      Confirmado: "bg-blue-500 text-white border-blue-500",
+      Pendiente: "bg-amber-400 text-slate-950 border-amber-400",
+      Cancelado: "bg-rose-500 text-white border-rose-500",
+      Finalizado: "bg-emerald-500 text-white border-emerald-500",
+      "En curso": "bg-cyan-500 text-white border-cyan-500"
+    };
+    const statusSoft = {
+      Confirmado: "bg-blue-50 text-blue-700 ring-blue-100",
+      Pendiente: "bg-amber-50 text-amber-700 ring-amber-100",
+      Cancelado: "bg-rose-50 text-rose-700 ring-rose-100",
+      Finalizado: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+      "En curso": "bg-cyan-50 text-cyan-700 ring-cyan-100"
+    };
+    const moneyRows = Array.from({ length: 26 }, (_, i) => ({
+      date: `${String((i % 19) + 8).padStart(2,"0")}/06/2026`,
+      patient: patients[(i * 3) % patients.length].name,
+      type: i % 4 === 1 ? "Deuda" : "Ingreso",
+      amount: [25000,15000,40000,120000,35000,18000,52000][i % 7],
+      method: ["Efectivo","Transferencia","Tarjeta","Mercado Pago"][i % 4],
+      note: treatments[i % treatments.length]
+    }));
+
+    function App() {
+      const [logged, setLogged] = useState(false);
+      const [role, setRole] = useState("Odontólogo");
+      const [page, setPage] = useState("Inicio");
+      const [agendaView, setAgendaView] = useState("diaria");
+      const [selectedDate, setSelectedDate] = useState(today);
+      const [selectedPatient, setSelectedPatient] = useState(patients[0]);
+      const [patientTab, setPatientTab] = useState("Historia clínica");
+      const [drawerAppt, setDrawerAppt] = useState(null);
+      const [modal, setModal] = useState(null);
+      const [sidebarOpen, setSidebarOpen] = useState(false);
+      const [tasks, setTasks] = useState(["Comprar instrumental","Revisar sillón 3","Enviar presupuesto","Llamar laboratorio"].map((t, i) => ({ t, done: i === 1 })));
+      const [readNotifs, setReadNotifs] = useState({});
+
+      useEffect(() => { if (page === "Agenda") setAgendaView(role === "Asistente" ? "semanal" : "diaria"); }, [role]);
+
+      const dayAppointments = useMemo(() => {
+        let rows = allAppointments.filter(a => a.date === selectedDate);
+        if (rows.length < 5) rows = allAppointments.slice(0, 9).map((a, i) => ({ ...a, date: selectedDate, time: baseSlots[i % baseSlots.length][0] }));
+        return rows.sort((a,b) => a.time.localeCompare(b.time));
+      }, [selectedDate]);
+
+      const openPatient = (id, tab = "Historia clínica") => {
+        setSelectedPatient(patients.find(p => p.id === id) || patients[0]);
+        setPatientTab(tab);
+        setDrawerAppt(null);
+        setPage("Paciente");
+        setSidebarOpen(false);
+      };
+      const goAgenda = () => { setPage("Agenda"); setSidebarOpen(false); };
+
+      if (!logged) return <Login role={role} setRole={setRole} enter={() => { setLogged(true); setAgendaView(role === "Asistente" ? "semanal" : "diaria"); }} />;
+
+      return (
+        <div className="min-h-screen bg-mist text-ink">
+          <Sidebar page={page} setPage={setPage} role={role} setRole={setRole} open={sidebarOpen} setOpen={setSidebarOpen} />
+          <main className="lg:pl-[276px]">
+            <Topbar page={page} role={role} user={role === "Odontólogo" ? "Dr. Alejandro Alvarado" : "Amanda Gonzalez"} setSidebarOpen={setSidebarOpen} />
+            <div className="mx-auto max-w-[1560px] px-4 py-4 sm:px-6 lg:px-8">
+              {page === "Inicio" && <Dashboard dayAppointments={dayAppointments} selectedDate={selectedDate} setSelectedDate={setSelectedDate} openPatient={openPatient} tasks={tasks} setTasks={setTasks} goAgenda={goAgenda} />}
+              {page === "Agenda" && <Agenda role={role} view={agendaView} setView={setAgendaView} dayAppointments={dayAppointments} setDrawerAppt={setDrawerAppt} openPatient={openPatient} setModal={setModal} />}
+              {page === "Pacientes" && <Patients openPatient={openPatient} setModal={setModal} />}
+              {page === "Paciente" && <PatientFile patient={selectedPatient} tab={patientTab} setTab={setPatientTab} setPage={setPage} setModal={setModal} />}
+              {page === "Pagos" && <Payments />}
+              {page === "Notificaciones" && <Notifications read={readNotifs} setRead={setReadNotifs} />}
+              {page === "Configuración" && <Settings role={role} />}
+            </div>
+          </main>
+          {drawerAppt && <AppointmentDrawer appt={drawerAppt} openPatient={openPatient} close={() => setDrawerAppt(null)} />}
+          {modal && <Modal type={modal} close={() => setModal(null)} />}
+        </div>
+      );
+    }
+
+    function Login({ role, setRole, enter }) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-6">
+          <div className="w-full max-w-5xl rounded-[28px] border border-slate-200 bg-white shadow-soft overflow-hidden">
+            <div className="grid md:grid-cols-2">
+              <div className="min-h-[520px] p-10 flex flex-col justify-between border-r border-slate-200">
+                <Logo large />
+                <div className="space-y-5">
+                  <p className="text-sm font-medium text-slate-500">Administración inteligente para consultorios odontológicos.</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    {["Agenda","Pacientes","Pagos"].map((x, i) => <div key={x} className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><Icon name={["calendar-days","users","credit-card"][i]} /><p className="mt-3 text-sm font-semibold">{x}</p></div>)}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-slate-400"><Icon name="instagram" /><Icon name="message-circle" /><Icon name="linkedin" /></div>
+              </div>
+              <div className="p-10 sm:p-14 flex flex-col justify-center">
+                <h1 className="text-3xl font-extrabold tracking-tight">Acceder</h1>
+                <p className="mt-2 text-slate-500">Ingresa tus credenciales</p>
+                <div className="mt-8 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
+                  {["Odontólogo","Asistente"].map(r => <button key={r} onClick={() => setRole(r)} className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${role === r ? "bg-white shadow-sm text-brand" : "text-slate-500"}`}>{r}</button>)}
+                </div>
+                <input className="mt-6 h-12 rounded-xl border border-slate-200 px-4 outline-none focus:ring-4 focus:ring-blue-100" placeholder="Email" defaultValue={role === "Odontólogo" ? "doctor@dentalpro.com" : "asistente@dentalpro.com"} />
+                <div className="mt-3 flex h-12 items-center rounded-xl border border-slate-200 px-4 focus-within:ring-4 focus-within:ring-blue-100">
+                  <input className="flex-1 outline-none" placeholder="Contraseña" type="password" defaultValue="dentalpro" />
+                  <Icon name="eye" className="icon text-slate-400" />
+                </div>
+                <div className="mt-5 flex items-center justify-between text-sm">
+                  <label className="flex items-center gap-2"><span className="h-5 w-5 rounded-md border border-slate-300 bg-white"></span>Recordarme</label>
+                  <button className="text-brand">¿Olvidaste tu contraseña?</button>
+                </div>
+                <button onClick={enter} className="mt-7 h-12 rounded-xl bg-brand px-6 font-bold text-white shadow-crisp transition hover:-translate-y-0.5 hover:bg-blue-700">Entrar</button>
+                <p className="mt-5 text-center text-sm text-slate-500">¿No tiene una cuenta? <button className="text-brand font-semibold">Crear una</button></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function BrandMark({ large }) {
+      return <svg viewBox="0 0 600 600" className={large ? "h-20 w-20 text-brand" : "h-12 w-12 text-brand"} aria-hidden="true">
+        <g transform="translate(0,600) scale(0.1,-0.1)" fill="currentColor" stroke="none">
+          <path d="M1725 4863 c-63 -6 -142 -26 -189 -50 -75 -38 -161 -125 -200 -205 -53 -104 -58 -149 -54 -426 4 -241 5 -249 33 -331 34 -100 87 -186 163 -264 49 -49 55 -60 45 -75 -125 -176 -183 -366 -183 -593 0 -360 175 -1053 318 -1261 101 -146 241 -196 370 -132 91 45 143 127 233 371 88 237 137 313 201 313 62 0 115 -89 203 -340 57 -162 95 -237 147 -291 55 -56 108 -79 188 -79 173 0 262 112 413 520 125 337 262 817 287 1008 17 125 8 314 -20 412 -63 222 -221 397 -418 466 -198 69 -391 51 -677 -61 -184 -71 -242 -85 -400 -91 -316 -14 -471 39 -542 184 l-28 57 0 220 c0 214 1 221 23 253 52 72 -16 67 1002 67 853 0 922 -1 1015 -19 261 -49 453 -153 641 -348 136 -142 229 -295 292 -484 90 -267 103 -587 38 -876 -109 -477 -456 -853 -880 -953 -60 -14 -121 -34 -136 -45 -55 -39 -77 -138 -45 -199 20 -40 70 -79 109 -86 46 -9 197 19 302 56 516 182 901 659 1010 1254 15 81 19 149 19 355 -1 238 -3 263 -28 381 -143 671 -629 1166 -1247 1269 -107 18 -180 20 -1045 22 -511 2 -943 2 -960 1z m1450 -1243 c105 -40 191 -149 224 -283 17 -71 15 -237 -4 -346 -51 -293 -287 -1066 -359 -1176 -21 -32 -49 -32 -70 0 -9 13 -38 91 -65 173 -120 362 -247 511 -436 512 -193 0 -310 -138 -454 -535 -84 -231 -112 -232 -191 -6 -76 215 -150 568 -170 808 -18 220 17 390 105 523 101 153 240 209 480 194 126 -7 252 10 357 50 34 13 100 37 144 54 176 66 320 77 439 32z"/>
+        </g>
+      </svg>
+    }
+    function Logo({ large }) {
+      return <div className="flex items-center gap-3">
+        <BrandMark large={large} />
+        <div>
+          <div className={`${large ? "text-5xl" : "text-2xl"} font-extrabold tracking-tight text-slate-950`}>Dental<span className="text-brand">Pro</span></div>
+          {large && <div className="mt-2 text-lg tracking-wide text-slate-500">Administración inteligente</div>}
+        </div>
+      </div>
+    }
+
+    function Sidebar({ page, setPage, role, setRole, open, setOpen }) {
+      const items = [["Inicio","home"],["Agenda","calendar-days"],["Pacientes","users"],["Pagos","credit-card"],["Notificaciones","bell"],["Configuración","settings"]];
+      return (
+        <>
+          <div onClick={() => setOpen(false)} className={`fixed inset-0 z-30 bg-slate-950/30 lg:hidden ${open ? "" : "hidden"}`}></div>
+          <aside className={`fixed inset-y-0 left-0 z-40 w-[276px] border-r border-slate-200 bg-white p-5 transition lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}>
+            <div className="flex h-full flex-col">
+              <Logo />
+              <nav className="mt-10 space-y-1">
+                {items.map(([label, icon]) => <button key={label} onClick={() => { setPage(label); setOpen(false); }} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${page === label ? "bg-brand text-white shadow-crisp" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950"}`}><Icon name={icon} />{label}</button>)}
+              </nav>
+              <div className="mt-auto rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center gap-3">
+                  <img src={role === "Odontólogo" ? "https://i.pravatar.cc/80?img=12" : "https://i.pravatar.cc/80?img=47"} className="h-11 w-11 rounded-full" />
+                  <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{role === "Odontólogo" ? "Dr. Alejandro" : "Amanda"}</p><p className="text-xs text-slate-500">{role}</p></div>
+                  <button onClick={() => setRole(role === "Odontólogo" ? "Asistente" : "Odontólogo")} title="Cambiar rol"><Icon name="chevrons-up-down" /></button>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </>
+      );
+    }
+
+    function Topbar({ page, role, user, setSidebarOpen }) {
+      return <header className="sticky top-0 z-20 border-b border-slate-200 glass"><div className="mx-auto flex h-16 max-w-[1560px] items-center justify-between px-4 sm:px-6 lg:px-8"><div className="flex items-center gap-3"><button onClick={() => setSidebarOpen(true)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white lg:hidden"><Icon name="menu" /></button><div><h2 className="font-extrabold tracking-tight">{page}</h2><p className="hidden text-xs text-slate-500 sm:block">Tu consultorio en movimiento</p></div></div><div className="flex items-center gap-5"><div className="hidden text-right sm:block"><p className="text-sm font-bold">{user}</p><p className="text-xs text-slate-500">{role}</p></div><div className="hidden text-right md:block"><p className="text-xs text-slate-500">Lunes, 29/06/2026</p><p className="text-xl font-extrabold">09:42</p></div><button className="relative grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white"><Icon name="bell" /><span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white"></span></button></div></div></header>
+    }
+
+    function Card({ children, className = "" }) { return <section className={`rounded-2xl border border-slate-200 bg-white shadow-crisp ${className}`}>{children}</section> }
+    function Pill({ children, tone = "bg-slate-100 text-slate-600 ring-slate-200" }) { return <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${tone}`}>{children}</span> }
+
+    function Dashboard({ dayAppointments, selectedDate, setSelectedDate, openPatient, tasks, setTasks, goAgenda }) {
+      const counts = { total: dayAppointments.length, conf: dayAppointments.filter(a => a.status === "Confirmado").length, pend: dayAppointments.filter(a => a.status === "Pendiente").length, canc: dayAppointments.filter(a => a.status === "Cancelado").length };
+      return <div className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[["Turnos de hoy",counts.total,"calendar-check","bg-blue-50 text-blue-700"],["Confirmados",counts.conf,"check-circle-2","bg-emerald-50 text-emerald-700"],["Pendientes",counts.pend,"clock","bg-amber-50 text-amber-700"],["Cancelados",counts.canc,"x-circle","bg-rose-50 text-rose-700"]].map(c => <Card key={c[0]} className="p-5"><div className="flex items-center justify-between"><div><p className="text-sm font-semibold text-slate-500">{c[0]}</p><p className="mt-2 text-3xl font-extrabold">{c[1]}</p></div><div className={`grid h-12 w-12 place-items-center rounded-2xl ${c[3]}`}><Icon name={c[2]} /></div></div></Card>)}
+        </div>
+        <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
+          <Card className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5"><div><h3 className="font-extrabold">Agenda del día</h3><p className="text-sm text-slate-500">{formatDate(selectedDate)}</p></div><button onClick={goAgenda} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold hover:bg-slate-50">Ver agenda</button></div><div className="divide-y divide-slate-100">{dayAppointments.map(a => <button key={a.id} onClick={() => openPatient(a.patientId)} className="grid w-full gap-3 px-5 py-4 text-left transition hover:bg-slate-50 md:grid-cols-[80px_1fr_150px_150px]"><div className="font-extrabold">{a.time}</div><div><p className="font-bold">{a.patient}</p><p className="text-sm text-slate-500">{a.treatment}</p></div><Pill tone={statusSoft[a.status]}>{a.status}</Pill><p className="text-sm font-semibold text-slate-500">{a.professional.replace("Dr. ","").replace("Dra. ","")}</p></button>)}</div></Card>
+          <div className="space-y-4"><MiniCalendar selectedDate={selectedDate} setSelectedDate={setSelectedDate} /><Card className="p-5"><h3 className="mb-4 flex items-center gap-2 font-extrabold"><Icon name="list-todo" />Tareas</h3><div className="space-y-2">{tasks.map((task, i) => <label key={task.t} className="flex cursor-pointer items-center gap-3 rounded-xl p-2 hover:bg-slate-50"><input type="checkbox" checked={task.done} onChange={() => setTasks(tasks.map((t, idx) => idx === i ? { ...t, done: !t.done } : t))} className="h-5 w-5 rounded border-slate-300 text-brand" /><span className={task.done ? "text-slate-400 line-through" : "font-medium"}>{task.t}</span></label>)}</div></Card></div>
+        </div>
+      </div>
+    }
+
+    function MiniCalendar({ selectedDate, setSelectedDate }) {
+      const days = Array.from({ length: 35 }, (_, i) => i - 1);
+      return <Card className="p-5"><div className="mb-4 flex items-center justify-between"><h3 className="flex items-center gap-2 font-extrabold"><Icon name="calendar" />Junio 2026</h3><div className="flex gap-1"><button className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100"><Icon name="chevron-left" /></button><button className="grid h-8 w-8 place-items-center rounded-lg hover:bg-slate-100"><Icon name="chevron-right" /></button></div></div><div className="grid grid-cols-7 gap-1 text-center text-xs font-bold text-slate-500">{["LUN","MAR","MIE","JUE","VIE","SAB","DOM"].map(d => <div key={d} className="py-2">{d}</div>)}</div><div className="grid grid-cols-7 gap-1 text-center text-sm">{days.map((n, i) => { const day = n <= 0 ? 30 + n : n; const date = `2026-06-${String(day).padStart(2,"0")}`; const selected = selectedDate === date; return <button key={i} onClick={() => n > 0 && n < 31 && setSelectedDate(date)} className={`aspect-square rounded-xl font-semibold ${selected ? "bg-brand text-white" : n <= 0 || n > 30 ? "text-slate-300" : "hover:bg-slate-100"}`}>{day}</button> })}</div></Card>
+    }
+
+    function Agenda({ role, view, setView, dayAppointments, setDrawerAppt, openPatient, setModal }) {
+      return <div className="relative space-y-4 pb-24"><div className="flex flex-wrap items-center justify-between gap-3"><div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-crisp">{[["semanal","Vista semanal"],["diaria","Vista diaria"]].map(v => <button key={v[0]} onClick={() => setView(v[0])} className={`rounded-lg px-4 py-2 text-sm font-bold ${view === v[0] ? "bg-slate-950 text-white" : "text-slate-500 hover:bg-slate-50"}`}>{v[1]}</button>)}</div><Pill>{role === "Asistente" ? "Edición limitada" : "Permisos completos"}</Pill></div>{view === "semanal" ? <WeeklyCalendar setDrawerAppt={setDrawerAppt} /> : <DailyTimeline dayAppointments={dayAppointments} openPatient={openPatient} setDrawerAppt={setDrawerAppt} />}<button onClick={() => setModal("turno")} className="fixed bottom-7 right-7 z-10 flex items-center gap-2 rounded-2xl bg-brand px-5 py-4 font-extrabold text-white shadow-soft transition hover:-translate-y-1"><Icon name="plus" />Nuevo turno</button></div>
+    }
+
+    function WeeklyCalendar({ setDrawerAppt }) {
+      const hours = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00"];
+      const week = ["Lun 29","Mar 30","Mie 01","Jue 02","Vie 03","Sab 04"];
+      const appts = allAppointments.slice(0, 32);
+      return <Card className="overflow-hidden"><div className="grid min-w-[980px] grid-cols-[76px_repeat(6,1fr)]"><div className="border-b border-slate-100 bg-slate-50 p-3"></div>{week.map(d => <div key={d} className="border-b border-l border-slate-100 bg-slate-50 p-3 text-center text-sm font-extrabold">{d}</div>)}{hours.map((h, hi) => <React.Fragment key={h}><div className="border-b border-slate-100 p-3 text-xs font-bold text-slate-400">{h}</div>{week.map((d, di) => { const a = appts.find(x => x.dayIndex === di && x.time.startsWith(String(8 + hi).padStart(2,"0"))); return <div key={d} className="relative h-24 border-b border-l border-slate-100 p-1">{a && <button onClick={() => setDrawerAppt(a)} className={`absolute inset-x-1 top-1 rounded-xl border p-2 text-left text-xs shadow-sm transition hover:scale-[1.01] ${statusTone[a.status]}`} style={{ height: Math.min(88, 36 + a.duration) }}><p className="truncate font-extrabold">{a.patient}</p><p className="truncate opacity-90">{a.treatment}</p></button>}</div> })}</React.Fragment>)}</div></Card>
+    }
+
+    function DailyTimeline({ dayAppointments, openPatient, setDrawerAppt }) {
+      return <Card className="overflow-hidden"><div className="divide-y divide-slate-100">{["08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","13:00","14:00","14:30","15:30","16:30","17:30","18:00"].map(h => { const a = dayAppointments.find(x => x.time === h); return <div key={h} className="grid min-h-[66px] grid-cols-[82px_1fr]"><div className="border-r border-slate-100 p-4 text-sm font-bold text-slate-400">{h}</div><div className="p-2">{a ? <button onClick={() => setDrawerAppt(a)} onDoubleClick={() => openPatient(a.patientId)} className={`flex w-full flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left shadow-sm ${statusTone[a.status]}`}><div><p className="font-extrabold">{a.patient}</p><p className="text-sm opacity-90">{a.treatment}</p></div><div className="text-right text-sm"><p>{a.professional}</p><p className="font-bold">{a.status}</p></div></button> : <div className="h-full rounded-xl border border-dashed border-slate-200"></div>}</div></div> })}</div></Card>
+    }
+
+    function AppointmentDrawer({ appt, openPatient, close }) {
+      return <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-slate-200 bg-white p-6 shadow-soft"><div className="flex items-center justify-between"><h3 className="text-xl font-extrabold">Detalle del turno</h3><button onClick={close} className="grid h-10 w-10 place-items-center rounded-xl hover:bg-slate-100"><Icon name="x" /></button></div><div className="mt-6 space-y-4"><Info label="Paciente" value={appt.patient} /><Info label="Horario" value={`${appt.date} · ${appt.time} · ${appt.duration} min`} /><Info label="Profesional" value={appt.professional} /><Info label="Estado" value={appt.status} /><Info label="Observaciones" value={appt.observations} /></div><button onClick={() => openPatient(appt.patientId)} className="mt-8 w-full rounded-xl bg-brand py-3 font-extrabold text-white">Ver ficha completa</button></div>
+    }
+    function Info({ label, value }) { return <div className="rounded-2xl bg-slate-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 font-semibold">{value}</p></div> }
+
+    function Patients({ openPatient, setModal }) {
+      const [q, setQ] = useState("");
+      const rows = patients.filter(p => p.name.toLowerCase().includes(q.toLowerCase()) || p.dni.includes(q)).slice(0, 24);
+      return <Card className="overflow-hidden"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5"><div className="relative min-w-[260px] flex-1"><Icon name="search" className="icon absolute left-3 top-3 text-slate-400" /><input value={q} onChange={e => setQ(e.target.value)} placeholder="Buscar por nombre o DNI" className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-4 outline-none focus:ring-4 focus:ring-blue-100" /></div><button onClick={() => setModal("paciente")} className="rounded-xl bg-brand px-4 py-3 text-sm font-extrabold text-white">Nuevo paciente</button></div><div className="overflow-x-auto"><table className="w-full min-w-[800px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr>{["Nombre","DNI","Teléfono","Cobertura","Última consulta"].map(h => <th key={h} className="px-5 py-3">{h}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{rows.map(p => <tr key={p.id} onClick={() => openPatient(p.id)} className="cursor-pointer hover:bg-slate-50"><td className="px-5 py-4"><div className="flex items-center gap-3"><img src={p.avatar} className="h-10 w-10 rounded-full" /><span className="font-bold">{p.name}</span></div></td><td className="px-5 py-4">{p.dni}</td><td className="px-5 py-4">{p.phone}</td><td className="px-5 py-4">{p.coverage}</td><td className="px-5 py-4">{p.last}</td></tr>)}</tbody></table></div></Card>
+    }
+
+    function PatientFile({ patient, tab, setTab, setPage, setModal }) {
+      const tabs = ["Historia clínica","Odontograma","Antecedentes médicos","Plan de tratamiento","Archivos","Próximos turnos","Notas"];
+      return <div className="space-y-4"><Card className="p-5"><div className="flex flex-col gap-5 lg:flex-row lg:items-start"><img src={patient.avatar} className="h-24 w-24 rounded-full bg-slate-100" /><div className="grid flex-1 gap-4 md:grid-cols-3"><div><h2 className="text-2xl font-extrabold">{patient.name}</h2><p className="mt-2 text-sm font-semibold text-slate-500">{patient.age} años · DNI {patient.dni}</p><p className="mt-1 text-sm">{patient.coverage} · Af. {patient.member}</p></div><div className="space-y-2 text-sm"><p className="flex gap-2"><Icon name="map-pin" />{patient.address}</p><p className="flex gap-2"><Icon name="phone" />{patient.phone}</p><p className="flex gap-2"><Icon name="mail" />{patient.email}</p></div><div className="space-y-2 text-sm"><p><b>Fecha de alta</b> {patient.since}</p><p><b>Número de paciente</b> {patient.id}</p><p><b>Observaciones</b> {patient.notes}</p></div></div><button onClick={() => setModal("paciente")} className="grid h-11 w-11 place-items-center rounded-xl border border-slate-200 hover:bg-slate-50"><Icon name="pencil" /></button></div><div className="mt-5 flex gap-2 overflow-x-auto border-t border-slate-100 pt-4">{tabs.map(t => <button key={t} onClick={() => setTab(t)} className={`whitespace-nowrap rounded-xl px-3 py-2 text-sm font-bold ${tab === t ? "bg-blue-50 text-brand" : "text-slate-500 hover:bg-slate-50"}`}>{t}</button>)}</div></Card><PatientTab tab={tab} patient={patient} setTab={setTab} setPage={setPage} setModal={setModal} /></div>
+    }
+
+    function PatientTab({ tab, patient, setTab, setPage, setModal }) {
+      if (tab === "Historia clínica") return <div className="grid gap-4 xl:grid-cols-[1fr_1fr]"><Card className="p-5"><div className="mb-5 flex justify-between"><h3 className="font-extrabold">Historia clínica</h3><button onClick={() => setModal("evolucion")} className="rounded-xl bg-brand px-3 py-2 text-sm font-bold text-white">Nueva evolución</button></div><Timeline /></Card><Odontogram /></div>;
+      if (tab === "Odontograma") return <Odontogram full />;
+      if (tab === "Antecedentes médicos") return <MedicalForm />;
+      if (tab === "Plan de tratamiento") return <TreatmentPlan />;
+      if (tab === "Archivos") return <Files setModal={setModal} />;
+      if (tab === "Próximos turnos") return <Upcoming setPage={setPage} />;
+      return <Notes setModal={setModal} />;
+    }
+    function Timeline() { return <div className="space-y-5">{Array.from({ length: 6 }, (_, i) => <div key={i} className="relative border-l-2 border-blue-100 pl-5"><span className="absolute -left-[7px] top-1 h-3 w-3 rounded-full bg-brand"></span><p className="text-sm font-bold text-slate-500">{String(7 + i).padStart(2,"0")}/05/2026 · {professionals[i % professionals.length]}</p><p className="mt-1 font-extrabold">{treatments[i % treatments.length]}</p><p className="text-sm text-slate-500">Se realiza control general, profilaxis y registro de evolución. Códigos 0101; 0501.</p></div>)}</div> }
+    function Odontogram({ full }) {
+      return <Card className="p-5">
+        <div className="mb-4 space-y-3">
+          <h3 className="font-extrabold">Odontograma</h3>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm">Sano</button>
+            <select className="h-10 min-w-[220px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none">
+              <option>20.15 restauración</option>
+              <option>03.02 TC</option>
+              <option>10.11 gingivectomía</option>
+              <option>10.01 exodoncia</option>
+            </select>
+            <button className="rounded-xl bg-blue-50 px-4 py-2 text-sm font-bold text-brand ring-1 ring-blue-100">A realizar</button>
+          </div>
+        </div>
+        <div className={`odontogram-visual overflow-x-auto rounded-2xl border border-slate-200 bg-white p-4 ${full ? "max-w-5xl" : ""}`}>
+          <svg viewBox="0 0 760 156" role="img" aria-label="Odontograma visual">
+            <rect x="0" y="0" width="760" height="156" rx="18" fill="#ffffff" />
+            <line x1="380" y1="18" x2="380" y2="138" stroke="#111827" strokeWidth="1.4" />
+            <line x1="32" y1="77" x2="728" y2="77" stroke="#111827" strokeWidth="1.1" opacity=".65" />
+            {[
+              ["18",55,30],["17",96,30],["16",137,30],["15",178,30],["14",219,30],["13",260,30],["12",301,30],["11",342,30],
+              ["21",419,30],["22",460,30],["23",501,30],["24",542,30],["25",583,30],["26",624,30],["27",665,30],["28",706,30],
+              ["48",55,110],["47",96,110],["46",137,110],["45",178,110],["44",219,110],["43",260,110],["42",301,110],["41",342,110],
+              ["31",419,110],["32",460,110],["33",501,110],["34",542,110],["35",583,110],["36",624,110],["37",665,110],["38",706,110]
+            ].map(([n,x,y]) => <text key={n} x={x} y={y + (y < 60 ? -18 : 35)} textAnchor="middle" fontSize="13" fontWeight="800" fill="#64748b">{n}</text>)}
+            {[
+              [55,46],[96,46],[137,46],[178,46],[219,46],[260,46],[301,46],[342,46],
+              [419,46],[460,46],[501,46],[542,46],[583,46],[624,46],[665,46],[706,46],
+              [55,96],[96,96],[137,96],[178,96],[219,96],[260,96],[301,96],[342,96],
+              [419,96],[460,96],[501,96],[542,96],[583,96],[624,96],[665,96],[706,96]
+            ].map(([x,y], i) => <g key={i}>
+              <circle cx={x} cy={y} r="17" fill="#fff" stroke="#111827" strokeWidth="2" />
+              <circle cx={x} cy={y} r="8.5" fill={i === 6 ? "#22c7f2" : "#fff"} stroke="#111827" strokeWidth="1.7" />
+              <path d={`M ${x-12} ${y-12} L ${x-6} ${y-5} M ${x+12} ${y-12} L ${x+6} ${y-5} M ${x-12} ${y+12} L ${x-6} ${y+5} M ${x+12} ${y+12} L ${x+6} ${y+5}`} stroke="#111827" strokeWidth="1.45" strokeLinecap="round" />
+            </g>)}
+          </svg>
+        </div>
+      </Card>
+    }
+    function MedicalForm() { const qs = ["¿Presenta alergias?","¿Toma medicación actualmente?","¿Padece enfermedades sistémicas?","¿Tiene enfermedades infectocontagiosas?","¿Tiene problemas cardiacos?","¿Posee marcapasos o prótesis?","¿Sufrió cirugías importantes?"]; return <Card className="p-5"><h3 className="mb-5 font-extrabold">Antecedentes médicos</h3><div className="space-y-3">{qs.map((q, i) => <MedicalQuestion key={q} q={q} yes={i === 0 || i === 1 || i === 6} />)}</div></Card> }
+    function MedicalQuestion({ q, yes }) { const [v,setV]=useState(yes); return <div className="rounded-2xl border border-slate-200 p-4"><div className="flex flex-wrap items-center justify-between gap-3"><p className="font-semibold">{q}</p><div className="rounded-xl bg-slate-100 p-1"><button onClick={()=>setV(true)} className={`rounded-lg px-3 py-1 text-sm font-bold ${v?"bg-white text-rose-600 shadow-sm":"text-slate-500"}`}>SI</button><button onClick={()=>setV(false)} className={`rounded-lg px-3 py-1 text-sm font-bold ${!v?"bg-white text-slate-700 shadow-sm":"text-slate-500"}`}>NO</button></div></div>{v && <input className="mt-3 h-10 w-full rounded-xl border border-slate-200 px-3 outline-none" defaultValue="Detalle clínico relevante para el tratamiento." />}</div> }
+    function TreatmentPlan() { const total = 450000, paid = 190000; return <Card className="overflow-hidden"><div className="grid gap-4 border-b border-slate-100 p-5 md:grid-cols-3"><Metric label="Costo total" value={peso(total)} /><Metric label="Ingresos realizados" value={peso(paid)} /><Metric label="Saldo pendiente" value={peso(total-paid)} /></div><div className="overflow-x-auto"><table className="w-full min-w-[860px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr>{["Prioridad","Tratamiento","Pieza","Estado","Profesional","Presupuesto"].map(h=><th key={h} className="px-5 py-3">{h}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{Array.from({length:8},(_,i)=><tr key={i}><td className="px-5 py-4"><Pill>{["Alta","Media","Baja"][i%3]}</Pill></td><td className="px-5 py-4 font-bold">{treatments[i]}</td><td className="px-5 py-4">{[18,21,36,45,11,24,47,32][i]}</td><td className="px-5 py-4"><Pill tone={statusSoft[["Pendiente","En curso","Finalizado"][i%3]]}>{["Pendiente","En curso","Finalizado"][i%3]}</Pill></td><td className="px-5 py-4">{professionals[i%4]}</td><td className="px-5 py-4 font-bold">{peso([35000,60000,90000,120000][i%4])}</td></tr>)}</tbody></table></div></Card> }
+    function Files({ setModal }) { const files = [["12/01/2026","PDF","Orden de exodoncia","Whatsappweb"],["12/01/2026","JPG","Radiografia Post TC en 45","Whatsappweb"],["12/01/2026","JPG","Radiografia Pre TC en 45","Descarga1743"],["20/04/2026","PDF","Orden para tomografia para implante en 36","2025/04/20_Orden"],["21/04/2026","JPG","Fotografia de pieza 21 fracturada","WhatsApp Image"]]; return <Card className="overflow-hidden"><div className="flex justify-between p-5"><h3 className="font-extrabold">Archivos e imágenes</h3><button onClick={()=>setModal("archivo")} className="rounded-xl bg-brand px-3 py-2 text-sm font-bold text-white">Subir archivo</button></div><div className="divide-y divide-slate-100">{files.map((f,i)=><button key={i} onClick={()=>setModal("preview")} className="grid w-full gap-3 px-5 py-4 text-left hover:bg-slate-50 md:grid-cols-[110px_90px_1fr_1fr_90px]"><b>{f[0]}</b><Pill tone={f[1]==="PDF"?"bg-rose-50 text-rose-700 ring-rose-100":"bg-emerald-50 text-emerald-700 ring-emerald-100"}>{f[1]}</Pill><span>{f[2]}</span><span className="text-slate-500">{f[3]}</span><span className="flex gap-2"><Icon name="download"/><Icon name="more-vertical"/></span></button>)}</div></Card> }
+    function Upcoming({ setPage }) { return <Card className="p-5"><h3 className="mb-4 font-extrabold">Próximos turnos</h3><div className="space-y-3">{allAppointments.slice(0,5).map((a,i)=><div key={i} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 p-4"><div><b>{a.date} · {a.time}</b><p className="text-sm text-slate-500">{a.professional}</p></div><Pill tone={statusSoft[a.status]}>{a.status}</Pill><button className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold">Enviar recordatorio</button></div>)}</div><button onClick={()=>setPage("Agenda")} className="mt-5 rounded-xl bg-slate-950 px-4 py-3 font-bold text-white">Volver a Agenda</button></Card> }
+    function Notes({ setModal }) { return <Card className="p-5"><div className="mb-5 flex justify-between"><h3 className="font-extrabold">Notas</h3><button onClick={()=>setModal("nota")} className="rounded-xl bg-brand px-3 py-2 text-sm font-bold text-white">Nueva nota</button></div><Timeline /></Card> }
+    function Metric({label,value}){return <div className="rounded-2xl bg-slate-50 p-4"><p className="text-sm font-bold text-slate-500">{label}</p><p className="mt-1 text-2xl font-extrabold">{value}</p></div>}
+
+    function Payments() { const income = moneyRows.filter(r=>r.type==="Ingreso").reduce((s,r)=>s+r.amount,0), debt = moneyRows.filter(r=>r.type==="Deuda").reduce((s,r)=>s+r.amount,0); return <div className="space-y-4"><div className="grid gap-4 md:grid-cols-3"><Metric label="Ingresos" value={peso(income)} /><Metric label="Deudas" value={peso(debt)} /><Metric label="Balance" value={peso(income-debt)} /></div><Card className="p-5"><div className="mb-5 flex flex-wrap justify-between gap-3"><div className="flex gap-2">{["Hoy","Esta semana","Este mes","Todo"].map((f,i)=><button key={f} className={`rounded-xl px-3 py-2 text-sm font-bold ${i===2?"bg-slate-950 text-white":"border border-slate-200 bg-white"}`}>{f}</button>)}</div><button className="rounded-xl bg-brand px-3 py-2 text-sm font-bold text-white">Agregar pago</button></div><div className="grid gap-5 xl:grid-cols-[1fr_320px]"><div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500"><tr>{["Fecha","Paciente","Ingreso o deuda","Monto","Método"].map(h=><th key={h} className="px-4 py-3">{h}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{moneyRows.slice(0,14).map((r,i)=><tr key={i}><td className="px-4 py-3">{r.date}</td><td className="px-4 py-3 font-bold">{r.patient}</td><td className={`px-4 py-3 font-bold ${r.type==="Deuda"?"text-rose-600":"text-emerald-600"}`}>{r.type}</td><td className="px-4 py-3">{peso(r.amount)}</td><td className="px-4 py-3">{r.method}</td></tr>)}</tbody></table></div><div className="rounded-2xl bg-slate-50 p-5"><h4 className="font-extrabold">Balance mensual</h4><div className="mt-6 flex h-52 items-end gap-4">{[42,70,55,90,62,82].map((h,i)=><div key={i} className="flex flex-1 flex-col items-center gap-2"><div className="w-full rounded-t-xl bg-gradient-to-t from-brand to-cyanx" style={{height:h+"%"}}></div><span className="text-xs font-bold text-slate-400">{["E","F","M","A","M","J"][i]}</span></div>)}</div></div></div></Card></div> }
+    function Notifications({ read, setRead }) { const rows = ["Paciente confirmó turno","Nuevo archivo agregado","Pago recibido","Turno cancelado","Recordatorio enviado","Presupuesto aprobado","Cambio de cobertura detectado"]; return <Card className="overflow-hidden"><div className="border-b border-slate-100 p-5"><h3 className="font-extrabold">Inbox</h3></div><div className="divide-y divide-slate-100">{rows.map((r,i)=><button key={r} onClick={()=>setRead({...read,[i]:true})} className={`flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-slate-50 ${read[i]?"opacity-55":""}`}><span className={`h-3 w-3 rounded-full ${read[i]?"bg-slate-300":"bg-brand"}`}></span><div><p className="font-bold">{r}</p><p className="text-sm text-slate-500">{patients[i].name} · hace {i+2} min</p></div></button>)}</div></Card> }
+    function Settings({ role }) { return <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{["Perfil del consultorio","Usuarios","Permisos","Plantillas","Notificaciones","Seguridad","Preferencias generales"].map((s,i)=><Card key={s} className="p-5 transition hover:-translate-y-1 hover:shadow-soft"><div className="flex items-center justify-between"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-100"><Icon name={["building-2","users","shield-check","file-text","bell","lock","sliders-horizontal"][i]} /></div><Icon name="arrow-up-right" className="icon text-slate-400" /></div><h3 className="mt-5 font-extrabold">{s}</h3><p className="mt-2 text-sm text-slate-500">{role === "Asistente" && s === "Permisos" ? "Vista con edición limitada." : "Configura esta sección del producto."}</p></Card>)}</div> }
+    function Modal({ type, close }) { const title = { turno:"Nuevo turno", paciente:"Datos del paciente", evolucion:"Nueva evolución", archivo:"Subir archivo", preview:"Vista previa", nota:"Nueva nota" }[type]; return <div className="fixed inset-0 z-[60] grid place-items-center bg-slate-950/35 p-4"><div className="w-full max-w-xl rounded-3xl bg-white p-6 shadow-soft"><div className="flex items-center justify-between"><h3 className="text-xl font-extrabold">{title}</h3><button onClick={close} className="grid h-10 w-10 place-items-center rounded-xl hover:bg-slate-100"><Icon name="x" /></button></div>{type==="preview"?<div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-8 text-center"><Icon name="file-search" className="mx-auto h-12 w-12 text-brand" /><p className="mt-4 font-bold">Previsualización simulada de archivo clínico</p></div>:<div className="mt-5 grid gap-3 sm:grid-cols-2">{["Paciente","Fecha","Hora","Profesional","Tratamiento","Observaciones"].map((f,i)=><input key={f} className={`h-11 rounded-xl border border-slate-200 px-3 outline-none focus:ring-4 focus:ring-blue-100 ${i===5?"sm:col-span-2":""}`} placeholder={f} defaultValue={i===0?"Juan Perez":""} />)}</div>}<button onClick={close} className="mt-6 w-full rounded-xl bg-brand py-3 font-extrabold text-white">Guardar</button></div></div> }
+
+    function formatDate(d) { const [y,m,day]=d.split("-"); return `${day}/${m}/${y}`; }
+    function peso(n) { return "$ " + n.toLocaleString("es-AR"); }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
